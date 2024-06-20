@@ -179,26 +179,9 @@ int eraseLinesTet(TetGame* tetg) {
       tetg->score += 1496;
     }
   }
+  save_max_score(tetg);
   return count;
 }
-
-// // Чтение очков. Рекорд
-// void read_highscore(TetGame* tetg) {
-//   FILE* f = fopen("highscore", "rb");
-//   if (f) {
-//     fread(&(tetg->highscore), sizeof(int), 1, f);
-//     fclose(f);
-//   }
-// }
-
-// // Запись очков. Рекорд
-// void write_highscore(TetGame* tetg) {
-//   FILE* f = fopen("highscore", "wb");
-//   if (f) {
-//     fwrite(&(tetg->highscore), sizeof(int), 1, f);
-//     fclose(f);
-//   }
-// }
 
 // Опр. функцию создания и иниц. фигуры
 TetFigure* createTetFigure(TetGame* tetg) {
@@ -330,6 +313,15 @@ void calculateTet(TetGame* tetg) {
       break;
   }
   tetg->ticks_left--;
+
+  // Сохранение очков в record
+  int high_score;
+  FILE* file = fopen("./max_score.txt", "r");
+  fscanf(file, "%d", &high_score);
+  fclose(file);
+  // Если сделать tetg->score, то убирается проблема записаных неточных значений
+  // в функ. eraseLinesTet, но сохранение очков будет в score
+  tetg->highscore = high_score;
 }
 
 void save_max_score(TetGame* tetg) {

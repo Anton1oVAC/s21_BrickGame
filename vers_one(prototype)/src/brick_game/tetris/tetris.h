@@ -93,13 +93,11 @@ void plantFigure(TetGame* tetg);
 int lineFilledTet(int i, TetField* tfl);
 void dropLineTet(int i, TetField* tfl);
 int eraseLinesTet(TetGame* tetg);
-int add_score(TetGame* tetg);
-void read_highscore(TetGame* tetg);
-void write_highscore(TetGame* tetg);
 TetFigure* createTetFigure(TetGame* tetg);
 void freeTetFigure(TetFigure* tf);
 void dropNewFigure(TetGame* tetg);
 TetFigure* turnTetFigure(TetGame* tetg);
 void calculateTet(TetGame* tetg);  // просчет одного такта
+void save_max_score(TetGame* tetg);
 
 #endif
