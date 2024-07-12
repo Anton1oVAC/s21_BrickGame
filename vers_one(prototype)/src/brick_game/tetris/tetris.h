@@ -8,6 +8,8 @@
 
 // Конст для кол-ва тактов между момен. падения на один блок
 #define TET_TICKS_START 30
+#define MAX_LEVEL 10
+#define NEW_LEVEL_SCORE 600
 
 // Структура для блоков
 typedef struct TetBlock {
@@ -71,6 +73,8 @@ typedef struct TetGame {
   int playing;
   int score;      // очки
   int highscore;  // рекорд
+  int level;
+  // int speed;
 } TetGame;
 
 TetFiguresT* createTetFiguresT(int count, int figures_size,
@@ -99,5 +103,6 @@ void dropNewFigure(TetGame* tetg);
 TetFigure* turnTetFigure(TetGame* tetg);
 void calculateTet(TetGame* tetg);  // просчет одного такта
 void save_max_score(TetGame* tetg);
+void update_level(TetGame* tetg);
 
 #endif

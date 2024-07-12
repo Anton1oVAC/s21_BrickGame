@@ -132,6 +132,7 @@ void str() {
     attron(COLOR_PAIR(1));
     mvprintw(2, 12, "Score: %d", tetg->score);
     mvprintw(4, 12, "Record: %d", tetg->highscore);
+    mvprintw(6, 12, "level: %d", tetg->level);
     // Убрать курсор за экранwa
     move(tetg->field->height + 1, tetg->field->width + 1);
     attroff(COLOR_PAIR(1));

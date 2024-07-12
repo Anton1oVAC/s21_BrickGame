@@ -52,6 +52,7 @@ TetGame* createTetGame(int field_width, int field_height, int figures_size,
   tetg->figurest = createTetFiguresT(count, figures_size, figures_template);
 
   // Опред. зн. пер.
+  tetg->level = 1;
   tetg->ticks = TET_TICKS_START;
   tetg->ticks_left = TET_TICKS_START;
   tetg->score = 0;
@@ -180,6 +181,7 @@ int eraseLinesTet(TetGame* tetg) {
     }
   }
   save_max_score(tetg);
+  update_level(tetg);
   return count;
 }
 
@@ -336,4 +338,12 @@ void save_max_score(TetGame* tetg) {
     fprintf(file, "%d", tetg->score);
     fclose(file);
   }
+}
+
+void update_level(TetGame* tetg) {
+  int new_level = tetg->score / NEW_LEVEL_SCORE + 1;
+  if (new_level > MAX_LEVEL) {
+    new_level = MAX_LEVEL;
+  }
+  tetg->level = new_level;
 }
