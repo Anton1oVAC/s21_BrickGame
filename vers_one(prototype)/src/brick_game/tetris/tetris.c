@@ -1,5 +1,18 @@
 #include "tetris.h"
 
+
+// TetBlock **createTemplates() {
+//   TetBlock **tet_templates = malloc(7 * sizeof(TetBlock *));
+//   tet_templates[0] = &iFigure[0][0];
+//   tet_templates[1] = &oFigure[0][0];
+//   tet_templates[2] = &tFigure[0][0];
+//   tet_templates[3] = &sFigure[0][0];
+//   tet_templates[4] = &zFigure[0][0];
+//   tet_templates[5] = &jFigure[0][0];
+//   tet_templates[6] = &lFigure[0][0];
+//   return tet_templates;
+// }
+
 TetFiguresT* createTetFiguresT(int count, int figures_size,
                                TetBlock* figures_template) {
   // Алгоритм инициализации набора шаблонов
@@ -155,34 +168,49 @@ void dropLineTet(int i, TetField* tfl) {
 }
 
 // Функция удаляющая стороки и подсчитывающая их кол-во
-int eraseLinesTet(TetGame* tetg) {
-  TetField* tfl = tetg->field;
-  int count = 0;  // Кол-во удал. стр.
-
+int erase_lines(Game *tetg) {
+  Field *tfl = tetg->field;
+  int count = 0;
+   // Удал. стр. нач. с последней, выполняется сдвиг строк вниз
   for (int i = tfl->height - 1; i >= 0; i--) {
-    // Удал. стр. нач. с последней, выполняется сдвиг строк вниз
-    while (lineFilledTet(i, tfl)) {
-      // Пока текущая строка заполнена, удал ее со сдвигом вниз и увел. кол-во
+    // Пока текущая строка заполнена, удал ее со сдвигом вниз и увел. кол-во
       // удал. стр на 1
-      dropLineTet(i, tfl);
+    while (lineFilled(i, tfl)) {
+      dropLine(i, tfl);
       count++;
     }
   }
-  // Начисление очков на основе количества удаленных строк
-  if (count > 0) {
-    if (count == 1) {
-      tetg->score += 99;
-    } else if (count == 2) {
-      tetg->score += 298;
-    } else if (count == 3) {
-      tetg->score += 697;
-    } else if (count == 4) {
-      tetg->score += 1496;
-    }
-  }
-  save_max_score(tetg);
-  update_level(tetg);
   return count;
+}
+
+void score(Game *tetg) {
+  int erased_lines = erase_lines(tetg);
+  switch (erased_lines) {
+    case 0:
+      break;
+    case 1:
+      tetg->score += 100;
+      break;
+    case 2:
+      tetg->score += 300;
+      break;
+    case 3:
+      tetg->score += 700;
+      break;
+    default:
+      tetg->score += 1500;
+      break;
+  }
+  if (tetg->score > tetg->high_score) {
+    tetg->high_score = tetg->score;
+    save_score(tetg->high_score);
+  }
+
+  int new_level = tetg->score / 600 + 1;
+  if (new_level > tetg->level && new_level <= 10) {
+    tetg->level = new_level;
+    tetg->speed = new_level;
+  }
 }
 
 // Опр. функцию создания и иниц. фигуры

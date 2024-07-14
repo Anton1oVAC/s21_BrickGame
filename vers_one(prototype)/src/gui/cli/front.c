@@ -133,6 +133,17 @@ void str() {
     mvprintw(2, 12, "Score: %d", tetg->score);
     mvprintw(4, 12, "Record: %d", tetg->highscore);
     mvprintw(6, 12, "level: %d", tetg->level);
+    mvprintw(8, 12, "Next figure:");
+    // {
+    //   for (int i = 0; i < tetg->figurest->size; i++) {
+    //     mvprintw(9 + i, 15, "%d", tetg->figurest->blocks[i]);
+    //     mvprintw(9 + i, 16, "%d", tetg->figurest->blocks[i]);
+    //     mvprintw(9 + i, 17, "%d", tetg->figurest->blocks[i]);
+    //     mvprintw(9 + i, 18, "%d", tetg->figurest->blocks[i]);
+    //     mvprintw(9 + i, 19, "%d", tetg->figurest->blocks[i]);
+    //   }
+    // }
+
     // Убрать курсор за экранwa
     move(tetg->field->height + 1, tetg->field->width + 1);
     attroff(COLOR_PAIR(1));

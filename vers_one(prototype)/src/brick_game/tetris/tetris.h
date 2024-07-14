@@ -16,6 +16,14 @@ typedef struct TetBlock {
   int b;
 } TetBlock;
 
+// extern Block oFigure[5][5];
+// extern Block iFigure[5][5];
+// extern Block tFigure[5][5];
+// extern Block sFigure[5][5];
+// extern Block zFigure[5][5];
+// extern Block jFigure[5][5];
+// extern Block lFigure[5][5];
+
 // Структура для падающей фигуры
 typedef struct TetFigure {
   int x;
@@ -33,11 +41,11 @@ typedef struct TetFiguresT {
 } TetFiguresT;
 
 // структура игрового поля
-typedef struct TetField {
+typedef struct Field {
   int width;
   int height;
-  TetBlock* blocks;  // Пер.указ. для хранения массива из блоков
-} TetField;
+  TetBlock **blocks; // Пер.указ. для хранения массива из блоков
+} Field;
 
 // Набор констант, для возможных состояний игры
 enum {
@@ -46,36 +54,44 @@ enum {
 };
 
 // Набор констант, харак. набор действий игр.
-enum {
-  TET_PLAYER_NOP = 0,
-  TET_PLAYER_UP,         // смена расп. фиг.
-  TET_PLAYER_DOWN,       // вниз
-  TET_PLAYER_LEFT,       // влево
-  TET_PLAYER_RIGHT,      // вправо
-  TET_PLAYER_START,      // Старт игры (Не сделана)
-  TET_PLAYER_PAUSE,      // Пауза игры (Не сделана)
-  TET_PLAYER_TERMINATE,  // Закончить игру (Не сделана)
-};
+typedef enum {
+  Start, // Старт игры
+  Pause,  // Пауза игры
+  Terminate, // Закончить игру
+  Left,  // влево
+  Right, // вправо
+  Up, // смена расп. фиг.
+  Down, // вниз
+  Action // Действие
+} UserAction_t;
+
 
 // Структура опис. действия игрока
 typedef struct TetPlayer {
   int action;
 } TetPlayer;
 
+
 // Структура для игровых ситуаций
-typedef struct TetGame {
-  TetField* field;    // инфорация об поле
-  TetFigure* figure;  // информация о падающей фигуре
-  TetFiguresT* figurest;  // сведения, как выглядят фигуры
-  TetPlayer* player;  // Для взаимодействия с игроком               //  ???
-  int ticks;
+typedef struct Game {
+  Field *field; // инфорация об поле
+  Figure *figure; // информация о падающей фигуре
+  FiguresT *figurest;  // сведения, как выглядят фигуры
+  Player *player; // Для взаимодействия с игроком    
+  Block **tet_templates; // шаблоны фигур
+
+  int score;
+  int high_score;
   int ticks_left;
-  int playing;
-  int score;      // очки
-  int highscore;  // рекорд
+  int ticks;
+  int speed;
   int level;
-  // int speed;
-} TetGame;
+  int next;
+
+  int pause;
+  int state;
+
+} Game;
 
 TetFiguresT* createTetFiguresT(int count, int figures_size,
                                TetBlock* figures_template);
