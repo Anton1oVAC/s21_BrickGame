@@ -1,6 +1,5 @@
 #include "tetris.h"
 
-
 // TetBlock **createTemplates() {
 //   TetBlock **tet_templates = malloc(7 * sizeof(TetBlock *));
 //   tet_templates[0] = &iFigure[0][0];
@@ -74,7 +73,7 @@ TetGame* createTetGame(int field_width, int field_height, int figures_size,
   return tetg;
 }
 
-void freeTetGame(TetGame* tetg) {
+void freeTetGame(Game* tetg) {
   if (tetg) {
     freeTetField(tetg->field);
     freeTetFiguresT(tetg->figurest);
@@ -83,19 +82,19 @@ void freeTetGame(TetGame* tetg) {
 }
 
 // Смещение фигуры вниз
-void moveFigureDown(TetGame* tetg) { tetg->figure->y++; }
+void move_figur_down(Game* tetg) { tetg->figure->y++; }
 
 // Поворот фигуры
-void moveFigureUp(TetGame* tetg) { tetg->figure->y--; }
-
-// Движение фигуры влево
-void moveFigureLeft(TetGame* tetg) { tetg->figure->x--; }
+void move_figure_up(Game* tetg) { tetg->figure->y--; }
 
 // Движение фигуры вправо
-void moveFigureRight(TetGame* tetg) { tetg->figure->x++; }
+void move_figure_right(Game* tetg) { tetg->figure->x++; }
+
+// Движение фигуры влево
+void move_figur_left(Game* tetg) { tetg->figure->x--; }
 
 // Функ. было ли столкновение?
-int collisionTet(TetGame* tetg) {
+int collisionTet(Game* tetg) {
   // для удобстава объяв. пер.: падающую фигуру и игровое поле
   TetFigure* t = tetg->figure;
   TetField* tf = tetg->field;
@@ -124,22 +123,41 @@ int collisionTet(TetGame* tetg) {
   return 0;
 }
 
+
 // Функция размещения фигуры после падения
-void plantFigure(TetGame* tetg) {
+void plant_figure(Game* tetg) {
   // Перем. на фигуру
-  TetFigure* t = tetg->figure;
-  for (int i = 0; i < t->size; i++) {
-    for (int j = 0; j < t->size; j++) {
+  TetFigure* figure = tetg->figure;
+  for (int i = 0; i < figure->size; i++)
+    for (int j = 0; j < figure->size; j++)
       // Если блок не нулевой, опред. коорд поля соотв. блоку и перенесем его
       // данные на поле
-      if (t->blocks[i * t->size + j].b != 0) {
-        int fx = t->x + j;
-        int fy = t->y + i;
-        tetg->field->blocks[fy * tetg->field->width + fx].b =
-            t->blocks[i * t->size + j].b;
+      if (figure->blocks[i][j].b != 0) {
+        int fx = figure->x + j;
+        int fy = figure->y + i;
+        if (fx >= 0 && fx < tetg->field->width && fy >= 0 &&
+            fy < tetg->field->height) {
+          tetg->field->blocks[fy][fx].b = figure->blocks[i][j].b;
+        }
       }
-    }
-  }
+}
+
+// Функция размещения фигуры после падения
+void plant_figure(Game* tetg) {
+  // Перем. на фигуру
+  TetFigure* figure = tetg->figure;
+  for (int i = 0; i < figure->size; i++)
+    for (int j = 0; j < figure->size; j++)
+      // Если блок не нулевой, опред. коорд поля соотв. блоку и перенесем его
+      // данные на поле
+      if (figure->blocks[i][j].b != 0) {
+        int fx = figure->x + j;
+        int fy = figure->y + i;
+        if (fx >= 0 && fx < tetg->field->width && fy >= 0 &&
+            fy < tetg->field->height) {
+          tetg->field->blocks[fy][fx].b = figure->blocks[i][j].b;
+        }
+      }
 }
 
 // Функция для проверки заполнения стороки
@@ -151,39 +169,38 @@ int lineFilledTet(int i, TetField* tfl) {
 }
 
 // Функция сдвига на одну строку
-void dropLineTet(int i, TetField* tfl) {
+void drop_line(int i, TetField* tfl) {
   // Если строка нулевая, то очищаем
-  if (i == 0) {
-    for (int j = 0; j < tfl->width; j++) tfl->blocks[j].b = 0;
-  }  // Иначе, перенощу блоки верхней строки на строку текущую (индекс текущей и
-     // вверхней строки: к и (к-1)). Процесс повторяется для к от текущей
-     // позиции до первой, так реализуется сдвиг блоков поля
+  if (i == 0)
+    for (int j = 0; j < tfl->width; j++) tfl->blocks[i][j].b = 0;
+  // Иначе, перенощу блоки верхней строки на строку текущую (индекс текущей и
+  // вверхней строки: к и (к-1)). Процесс повторяется для к от текущей
+  // позиции до первой, так реализуется сдвиг блоков поля
   else {
-    for (int k = i; k > 0; k--) {
+    for (int k = i; k > 0; k--)
       for (int j = 0; j < tfl->width; j++)
-        tfl->blocks[k * tfl->width + j].b =
-            tfl->blocks[(k - 1) * tfl->width + j].b;
-    }
+        tfl->blocks[k][j].b = tfl->blocks[k - 1][j].b;
   }
 }
 
-// Функция удаляющая стороки и подсчитывающая их кол-во
-int erase_lines(Game *tetg) {
-  Field *tfl = tetg->field;
+// Функция удаляющая стороки
+int erase_lines(Game* tetg) {
+  TetField* tfl = tetg->field;
   int count = 0;
-   // Удал. стр. нач. с последней, выполняется сдвиг строк вниз
+  // Удал. стр. нач. с последней, выполняется сдвиг строк вниз
   for (int i = tfl->height - 1; i >= 0; i--) {
     // Пока текущая строка заполнена, удал ее со сдвигом вниз и увел. кол-во
-      // удал. стр на 1
+    // удал. стр на 1
     while (lineFilled(i, tfl)) {
-      dropLine(i, tfl);
+      drop_line(i, tfl);
       count++;
     }
   }
   return count;
 }
 
-void score(Game *tetg) {
+// Функция подсчитывающая кол-во очков на основе удаления
+void score(Game* tetg) {
   int erased_lines = erase_lines(tetg);
   switch (erased_lines) {
     case 0:
@@ -201,11 +218,13 @@ void score(Game *tetg) {
       tetg->score += 1500;
       break;
   }
+  // Условие для рекорда
   if (tetg->score > tetg->high_score) {
     tetg->high_score = tetg->score;
     save_score(tetg->high_score);
   }
 
+  // Условие для для повышения уровня каждые 600 очков
   int new_level = tetg->score / 600 + 1;
   if (new_level > tetg->level && new_level <= 10) {
     tetg->level = new_level;
@@ -214,7 +233,7 @@ void score(Game *tetg) {
 }
 
 // Опр. функцию создания и иниц. фигуры
-TetFigure* createTetFigure(TetGame* tetg) {
+TetFigure* createTetFigure(Game* tetg) {
   // Память для струк. описания фигуры
   TetFigure* t = (TetFigure*)malloc(sizeof(TetFigure));
   // Иниц. коорд нулями
@@ -238,7 +257,7 @@ void freeTetFigure(TetFigure* tf) {
 }
 
 // Функция выброса новой фигуры
-void dropNewFigure(TetGame* tetg) {
+void dropNewFigure(Game* tetg) {
   // Создание нов. фиг. в памяти
   TetFigure* t = createTetFigure(tetg);
   // Координаты: в центре и  в верху
@@ -260,7 +279,7 @@ void dropNewFigure(TetGame* tetg) {
 }
 
 // Функ поворота фигуры
-TetFigure* turnTetFigure(TetGame* tetg) {
+TetFigure* turnTetFigure(Game* tetg) {
   // Созд. пуст. фигуру
   TetFigure* t = createTetFigure(tetg);
   // Объяв. указ на старую фигуру
@@ -287,7 +306,74 @@ TetFigure* turnTetFigure(TetGame* tetg) {
 }
 
 // Функ. для просчета одного такта игрового цикла
-void calculateTet(TetGame* tetg) {
+void calculate_tet(Game* tetg) {
+  tetg->ticks_left = tetg->ticks;
+  move_figur_down(tetg);
+  tetg->state = MOVING;
+  if (collision(tetg)) {
+    move_figure_up(tetg);
+    plant_figure(tetg);
+    score(tetg);
+    if (tetg->figure != NULL) freeFigure(tetg->figure);
+    drop_new_figure(tetg);
+    tetg->state = DROP;
+    if (collision(tetg)) {
+      tetg->state = GAMEOVER;
+    }
+  }
+}
+// Состояние игры и обработка действий
+void calculate(Game* tetg) {
+  if (tetg->ticks_left <= 0 && tetg->state != PAUSE && tetg->state != INIT)
+    calculate_tet(tetg);
+  if (tetg->state == GAMEOVER) return;
+
+  // Обработка действий игрока
+  switch (tetg->player->action) {
+    case Right:
+      if (tetg->pause) break;
+      move_figure_right(tetg);
+      if (collision(tetg)) move_figur_left(tetg);
+      break;
+    case Left:
+      if (tetg->pause) break;
+      move_figur_left(tetg);
+      if (collision(tetg)) move_figure_right(tetg);
+      break;
+    case Down:
+      if (tetg->pause) break;
+      move_figur_down(tetg);
+      if (collision(tetg)) move_figure_up(tetg);
+      break;
+    case Up: {
+      if (tetg->pause) break;
+      handle_rotation(tetg);
+    } break;
+    case Pause:
+      if (tetg->pause) {
+        tetg->pause = 0;
+        tetg->state = MOVING;
+      } else {
+        tetg->pause = 1;
+        tetg->state = PAUSE;
+      }
+      break;
+    case Terminate:
+      tetg->state = GAMEOVER;
+      break;
+    case Start:
+      tetg->pause = 0;
+      tetg->state = MOVING;
+      break;
+    default:
+      break;
+  }
+
+  tetg->ticks_left--;
+}
+
+// Функ. для просчета одного такта игрового цикла
+void calculateTet(Game* tetg) {
   if (tetg->ticks_left <= 0) {
     tetg->ticks_left = tetg->ticks;
     moveFigureDown(tetg);
@@ -343,32 +429,27 @@ void calculateTet(TetGame* tetg) {
       break;
   }
   tetg->ticks_left--;
-
-  // Сохранение очков в record
-  int high_score;
-  FILE* file = fopen("./max_score.txt", "r");
-  fscanf(file, "%d", &high_score);
-  fclose(file);
-  // Если сделать tetg->score, то убирается проблема записаных неточных значений
-  // в функ. eraseLinesTet, но сохранение очков будет в score
-  tetg->highscore = high_score;
 }
 
-void save_max_score(TetGame* tetg) {
-  FILE* file;
-  int high_score;
-  file = fopen("max_score.txt", "r");
-  fscanf(file, "%d", &high_score);
-  fclose(file);
-
-  if (tetg->score > high_score) {
-    file = fopen("max_score.txt", "w");
-    fprintf(file, "%d", tetg->score);
+void save_score(int high_score) {
+  FILE* file = fopen("high_score.dat", "w");
+  if (file != NULL) {
+    fprintf(file, "%d", high_score);
     fclose(file);
   }
 }
 
-void update_level(TetGame* tetg) {
+int load_score() {
+  int high_score = 0;
+  FILE* file = fopen("high_score.dat", "r");
+  if (file != NULL) {
+    fscanf(file, "%d", &high_score);
+    fclose(file);
+  }
+  return high_score;
+}
+
+void update_level(Game* tetg) {
   int new_level = tetg->score / NEW_LEVEL_SCORE + 1;
   if (new_level > MAX_LEVEL) {
     new_level = MAX_LEVEL;

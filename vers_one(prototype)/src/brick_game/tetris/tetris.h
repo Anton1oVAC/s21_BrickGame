@@ -29,7 +29,7 @@ typedef struct TetFigure {
   int x;
   int y;
   int size;
-  TetBlock* blocks;  // Массив из блоков соответствующей фигуры
+  TetBlock** blocks;  // Массив из блоков соответствующей фигуры
 } TetFigure;
 
 // Структура для описания шаблона фигуры
@@ -41,44 +41,39 @@ typedef struct TetFiguresT {
 } TetFiguresT;
 
 // структура игрового поля
-typedef struct Field {
+typedef struct TetField {
   int width;
   int height;
-  TetBlock **blocks; // Пер.указ. для хранения массива из блоков
-} Field;
+  TetBlock** blocks;  // Пер.указ. для хранения массива из блоков
+} TetField;
 
 // Набор констант, для возможных состояний игры
-enum {
-  TET_GAMEOVER = 0,
-  TET_PLAYING,
-};
+typedef enum { INIT, DROP, MOVING, COLLISION, PAUSE, GAMEOVER } GameState;
 
 // Набор констант, харак. набор действий игр.
 typedef enum {
-  Start, // Старт игры
-  Pause,  // Пауза игры
-  Terminate, // Закончить игру
-  Left,  // влево
-  Right, // вправо
-  Up, // смена расп. фиг.
-  Down, // вниз
-  Action // Действие
+  Start,      // Старт игры
+  Pause,      // Пауза игры
+  Terminate,  // Закончить игру
+  Left,       // влево
+  Right,      // вправо
+  Up,         // смена расп. фиг.
+  Down,       // вниз
+  Action      // Действие
 } UserAction_t;
-
 
 // Структура опис. действия игрока
 typedef struct TetPlayer {
   int action;
 } TetPlayer;
 
-
 // Структура для игровых ситуаций
 typedef struct Game {
-  Field *field; // инфорация об поле
-  Figure *figure; // информация о падающей фигуре
-  FiguresT *figurest;  // сведения, как выглядят фигуры
-  Player *player; // Для взаимодействия с игроком    
-  Block **tet_templates; // шаблоны фигур
+  TetField* field;    // инфорация об поле
+  TetFigure* figure;  // информация о падающей фигуре
+  TetFiguresT* figurest;  // сведения, как выглядят фигуры
+  TetPlayer* player;  // Для взаимодействия с игроком
+  TetBlock** tet_templates;  // шаблоны фигур
 
   int score;
   int high_score;
@@ -98,27 +93,28 @@ TetFiguresT* createTetFiguresT(int count, int figures_size,
 void freeTetFiguresT(TetFiguresT* tetft);
 TetField* createTetField(int width, int height);
 void freeTetField(TetField* tetf);
-TetGame* createTetGame(
+Game* createTetGame(
     int field_width, int field_height, int figures_size, int count,
     TetBlock* figures_template);  // Функция описания игровой структуры.
                                   // Размер игрового поля, размер фигур, кол-во
                                   // фигур, сведения шаблон фигур
-void freeTetGame(TetGame* tetg);
-void moveFigureDown(TetGame* tetg);
-void moveFigureUp(TetGame* tetg);
-void moveFigureLeft(TetGame* tetg);
-void moveFigureRight(TetGame* tetg);
-int collisionTet(TetGame* tetg);
-void plantFigure(TetGame* tetg);
+void freeTetGame(Game* tetg);
+void move_figur_down(Game* tetg);
+void move_figure_up(Game* tetg);
+void move_figur_left(Game* tetg);
+void move_figure_right(Game* tetg);
+int collisionTet(Game* tetg);
+void plant_figure(Game* tetg);
 int lineFilledTet(int i, TetField* tfl);
-void dropLineTet(int i, TetField* tfl);
-int eraseLinesTet(TetGame* tetg);
-TetFigure* createTetFigure(TetGame* tetg);
+void drop_line(int i, TetField* tfl);
+int erase_lines(Game* tetg);
+TetFigure* createTetFigure(Game* tetg);
 void freeTetFigure(TetFigure* tf);
-void dropNewFigure(TetGame* tetg);
-TetFigure* turnTetFigure(TetGame* tetg);
-void calculateTet(TetGame* tetg);  // просчет одного такта
-void save_max_score(TetGame* tetg);
-void update_level(TetGame* tetg);
+void dropNewFigure(Game* tetg);
+TetFigure* turnTetFigure(Game* tetg);
+void calculateTet(Game* tetg);  // просчет одного такта
+void save_score(int high_score);
+int load_score();
+void update_level(Game* tetg);
 
 #endif
