@@ -1,19 +1,21 @@
 #include "tetris.h"
 
-// TetBlock **createTemplates() {
-//   TetBlock **tet_templates = malloc(7 * sizeof(TetBlock *));
-//   tet_templates[0] = &iFigure[0][0];
-//   tet_templates[1] = &oFigure[0][0];
-//   tet_templates[2] = &tFigure[0][0];
-//   tet_templates[3] = &sFigure[0][0];
-//   tet_templates[4] = &zFigure[0][0];
-//   tet_templates[5] = &jFigure[0][0];
-//   tet_templates[6] = &lFigure[0][0];
-//   return tet_templates;
-// }
+Game* tetg;
 
-TetFiguresT* createTetFiguresT(int count, int figures_size,
-                               TetBlock* figures_template) {
+TetBlock** create_templates() {
+  TetBlock** tet_templates = malloc(7 * sizeof(TetBlock*));
+  tet_templates[0] = &iFigure[0][0];
+  tet_templates[1] = &oFigure[0][0];
+  tet_templates[2] = &tFigure[0][0];
+  tet_templates[3] = &sFigure[0][0];
+  tet_templates[4] = &zFigure[0][0];
+  tet_templates[5] = &jFigure[0][0];
+  tet_templates[6] = &lFigure[0][0];
+  return tet_templates;
+}
+
+TetFiguresT* create_figuresT(int count, int figures_size,
+                             TetBlock* figures_template) {
   // Алгоритм инициализации набора шаблонов
 
   TetFiguresT* tetft = (TetFiguresT*)malloc(sizeof(TetFiguresT));
@@ -30,22 +32,24 @@ void freeTetFiguresT(TetFiguresT* tetft) {
   if (tetft) free(tetft);
 }
 
-TetField* createTetField(int width, int height) {  // Память для игрового поля
+TetField* create_field(int width, int height) {  // Память для игрового поля
   TetField* tetf = (TetField*)malloc(sizeof(TetField));
   tetf->width = width;
   tetf->height = height;
 
-  tetf->blocks = (TetBlock*)malloc(sizeof(TetBlock) * width * height);
+  tetf->blocks = (TetBlock**)malloc(sizeof(TetBlock*) * height);
   // Память об информации о блоках (объем=структура*шир*выс)
-
-  for (int i = 0; i < width * height; i++) {
-    tetf->blocks[i].b = 0;  // Если блоков нет
+  for (int i = 0; i < height; i++) {
+    tetf->blocks[i] = (TetBlock*)malloc(sizeof(TetBlock) * width);
+    for (int j = 0; j < width; j++) {
+      tetf->blocks[i][j].b = 0;
+    }
   }
 
   return tetf;
 }
 
-void freeTetField(TetField* tetf) {
+void free_field(TetField* tetf) {
   if (tetf) {
     if (tetf->blocks) {
       free(tetf->blocks);
@@ -54,26 +58,33 @@ void freeTetField(TetField* tetf) {
   }
 }
 
-TetGame* createTetGame(int field_width, int field_height, int figures_size,
-                       int count, TetBlock* figures_template) {
+Game* create_game(int field_width, int field_height, int figures_size,
+                  int count, TetBlock* figures_template) {
   // Выделение памяти для основной структуры игры
-  TetGame* tetg = (TetGame*)malloc(sizeof(TetGame));
+  Game* tetg = (Game*)malloc(sizeof(Game));
   // Для поля
   tetg->field = createTetField(field_width, field_height);
+  tetg->tet_templates = create_templates();
   // для набора шаблонов
   tetg->figurest = createTetFiguresT(count, figures_size, figures_template);
 
   // Опред. зн. пер.
-  tetg->level = 1;
-  tetg->ticks = TET_TICKS_START;
-  tetg->ticks_left = TET_TICKS_START;
   tetg->score = 0;
-  tetg->playing = TET_PLAYING;
+  tetg->high_score = load_score();
+  tetg->ticks = 30;
+  tetg->ticks_left = 30;
+  tetg->speed = 1;
+  tetg->level = 1;
+
+  tetg->pause = 1;
+  tetg->state = INIT;
+
+  tetg->next = rand() % tetg->figurest->count;
 
   return tetg;
 }
 
-void freeTetGame(Game* tetg) {
+void free_game(Game* tetg) {
   if (tetg) {
     freeTetField(tetg->field);
     freeTetFiguresT(tetg->figurest);
@@ -94,35 +105,37 @@ void move_figure_right(Game* tetg) { tetg->figure->x++; }
 void move_figur_left(Game* tetg) { tetg->figure->x--; }
 
 // Функ. было ли столкновение?
-int collisionTet(Game* tetg) {
+int collision(Game* tetg) {
   // для удобстава объяв. пер.: падающую фигуру и игровое поле
-  TetFigure* t = tetg->figure;
-  TetField* tf = tetg->field;
+  TetFigure* figure = tetg->figure;
+  TetField* field = tetg->field;
 
   // Если столкн. произошло только в рамках обл. рис. фигуры
-  for (int i = 0; i < t->size; i++) {
-    for (int j = 0; j < t->size; j++) {
+  for (int i = 0; i < figure->size; i++)
+    for (int j = 0; j < figure->size; j++) {
       // Все двумерные констр. хранятся в одномерных масс., запиш. формулу
       // расчета по друмерным коорд i=y, j=x
 
       // Если блок фигур не пуст, то рассчит коорд на поле
-      if (t->blocks[i * t->size + j].b != 0) {
-        int fx = t->x + j;
-        int fy = t->y + i;
-
+      if (figure->blocks[i][j].b != 0) {
+        int fx = figure->x + j;
+        int fy = figure->y + i;
         // Если в том же месте, на поле, есть не пустой блок, зн. произ.
         // столкновение
-        if (tf->blocks[fy * tf->width + fx].b != 0) return 1;
-
+        if (fx < 0 || fx >= field->width || fy < 0 || fy >= field->height) {
+          tetg->state = COLLISION;
+          return 1;
+        }
         // Столкновение с границами поля
-        if (fx < 0 || fx >= tf->width || fy < 0 || fy >= tf->height) return 1;
+        if (field->blocks[fy][fx].b != 0) {
+          tetg->state = COLLISION;
+          return 1;
+        }
       }
     }
-  }
   // Если нет столкновений
   return 0;
 }
-
 
 // Функция размещения фигуры после падения
 void plant_figure(Game* tetg) {
@@ -130,8 +143,8 @@ void plant_figure(Game* tetg) {
   TetFigure* figure = tetg->figure;
   for (int i = 0; i < figure->size; i++)
     for (int j = 0; j < figure->size; j++)
-      // Если блок не нулевой, опред. коорд поля соотв. блоку и перенесем его
-      // данные на поле
+      // Если блок не нулевой, опред. коорд поля соотв. блоку и перенесем
+      // его данные на поле
       if (figure->blocks[i][j].b != 0) {
         int fx = figure->x + j;
         int fy = figure->y + i;
@@ -148,8 +161,8 @@ void plant_figure(Game* tetg) {
   TetFigure* figure = tetg->figure;
   for (int i = 0; i < figure->size; i++)
     for (int j = 0; j < figure->size; j++)
-      // Если блок не нулевой, опред. коорд поля соотв. блоку и перенесем его
-      // данные на поле
+      // Если блок не нулевой, опред. коорд поля соотв. блоку и перенесем
+      // его данные на поле
       if (figure->blocks[i][j].b != 0) {
         int fx = figure->x + j;
         int fy = figure->y + i;
@@ -173,9 +186,9 @@ void drop_line(int i, TetField* tfl) {
   // Если строка нулевая, то очищаем
   if (i == 0)
     for (int j = 0; j < tfl->width; j++) tfl->blocks[i][j].b = 0;
-  // Иначе, перенощу блоки верхней строки на строку текущую (индекс текущей и
-  // вверхней строки: к и (к-1)). Процесс повторяется для к от текущей
-  // позиции до первой, так реализуется сдвиг блоков поля
+  // Иначе, перенощу блоки верхней строки на строку текущую (индекс
+  // текущей и вверхней строки: к и (к-1)). Процесс повторяется для к от
+  // текущей позиции до первой, так реализуется сдвиг блоков поля
   else {
     for (int k = i; k > 0; k--)
       for (int j = 0; j < tfl->width; j++)
@@ -189,8 +202,8 @@ int erase_lines(Game* tetg) {
   int count = 0;
   // Удал. стр. нач. с последней, выполняется сдвиг строк вниз
   for (int i = tfl->height - 1; i >= 0; i--) {
-    // Пока текущая строка заполнена, удал ее со сдвигом вниз и увел. кол-во
-    // удал. стр на 1
+    // Пока текущая строка заполнена, удал ее со сдвигом вниз и увел.
+    // кол-во удал. стр на 1
     while (lineFilled(i, tfl)) {
       drop_line(i, tfl);
       count++;
@@ -267,13 +280,14 @@ void dropNewFigure(Game* tetg) {
   int fnum = rand() % 7;
   for (int i = 0; i < t->size; i++) {
     for (int j = 0; j < t->size; j++) {
-      // Скоп. блоки шабл. в обл. фигуры. Номер шаблона опр. смещение в масс.
-      // блоков в соотв. выбранного шаблона
+      // Скоп. блоки шабл. в обл. фигуры. Номер шаблона опр. смещение в
+      // масс. блоков в соотв. выбранного шаблона
       t->blocks[i * t->size + j].b =
           tetg->figurest->blocks[fnum * t->size * t->size + i * t->size + j].b;
     }
   }
-  // Удаление страрой фигуры из памяти. На ее роль назначим только что созданную
+  // Удаление страрой фигуры из памяти. На ее роль назначим только что
+  // созданную
   freeTetFigure(tetg->figure);
   tetg->figure = t;
 }
@@ -289,15 +303,15 @@ TetFigure* turnTetFigure(Game* tetg) {
   t->y = old->y;
 
   // Поворот осущ. след обр: будет счит., что посл. столбец блоков старой
-  // фигуры, это первая строка новой. Предпоследний столбец старой фигуры, это
-  // вторая строка новой фигуры. и т.д.
+  // фигуры, это первая строка новой. Предпоследний столбец старой фигуры,
+  // это вторая строка новой фигуры. и т.д.
   for (int i = 0; i < t->size; i++) {
     for (int j = 0; j < t->size; j++) {
-      // Если раб. с j - элементом нов. фигуры, то ему будет соответствовать j -
-      // элем. столбца старой (прямая зависимость)
+      // Если раб. с j - элементом нов. фигуры, то ему будет
+      // соответствовать j - элем. столбца старой (прямая зависимость)
 
-      // Если раб. с i - строкой нов. фиг., то зн. блок. для нее должны брать с
-      // i - столбца старой фиг., но с конца
+      // Если раб. с i - строкой нов. фиг., то зн. блок. для нее должны
+      // брать с i - столбца старой фиг., но с конца
       t->blocks[i * t->size + j].b =
           old->blocks[j * t->size + (t->size - 1 - i)].b;
     }
@@ -415,8 +429,9 @@ void calculateTet(Game* tetg) {
 
       // Объявление развернутой версии фигуры, текущей
       tetg->figure = t;
-      // Проверка ситуации на столкновение (если столкновение произошло, то
-      // вернем старую версию фигуры, новую удаляю. Иначе, удаляется старая)
+      // Проверка ситуации на столкновение (если столкновение произошло,
+      // то вернем старую версию фигуры, новую удаляю. Иначе, удаляется
+      // старая)
       if (collisionTet(tetg)) {
         tetg->figure = old;
         freeTetFigure(t);
