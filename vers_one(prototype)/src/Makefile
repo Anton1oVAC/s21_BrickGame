@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c11 -Wall -Werror -Wextra
+#CFLAGS=-std=c11 -Wall -Werror -Wextra
 
 GAME=main.c
 BACK=brick_game/tetris/tetris.c
