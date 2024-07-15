@@ -4,10 +4,11 @@ CC=gcc
 GAME=main.c
 BACK=brick_game/tetris/tetris.c
 FRONT=gui/cli/front.c
-
-NCURSES=-lncurses
-
 RESULT=tetris.out
+
+NCURSES_FLAGS=-lncurses
+TEST_FLAGS=-lcheck -lm -lpthread
+TEST_PARTS=$(wildcard test.c)
 
 all: install run
 
@@ -21,6 +22,9 @@ run:
 	./$(RESULT)
 
 test:
+	$(CC) $(TEST_PARTS) $(BACK) -o ./test.out $(TEST_FLAGS)
+	./test.out
+
 gcov_report:
 clang_format_n:
 clang_format_i:
