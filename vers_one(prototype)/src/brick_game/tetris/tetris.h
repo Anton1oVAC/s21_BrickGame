@@ -6,11 +6,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-// Конст для кол-ва тактов между момен. падения на один блок
-#define TET_TICKS_START 30
-#define MAX_LEVEL 10
-#define NEW_LEVEL_SCORE 600
-
 typedef struct {
   int** field;
   int** next;
@@ -108,24 +103,30 @@ Game* create_game(
     TetBlock* figures_template);  // Функция описания игровой структуры.
 // Размер игрового поля, размер фигур, кол-во
 // фигур, сведения шаблон фигур
+int** create_next_block(int size);
+void free_next_block(int** next, int size);
+void free_gui(GameInfo_t game, int size, int height);
 void free_game(Game* tetg);
 TetBlock** create_templates();
+void user_шnput(UserAction_t action, bool hold);
 void move_figur_down(Game* tetg);
 void move_figure_up(Game* tetg);
 void move_figur_left(Game* tetg);
 void move_figure_right(Game* tetg);
-int collisionTet(Game* tetg);
+int collision(Game* tetg);
+void handle_rotation(Game* tetg);
 void plant_figure(Game* tetg);
-int lineFilledTet(int i, TetField* tfl);
+int line_filled(int i, TetField* tfl);
 void drop_line(int i, TetField* tfl);
 int erase_lines(Game* tetg);
-TetFigure* createTetFigure(Game* tetg);
-void freeTetFigure(TetFigure* tf);
-void dropNewFigure(Game* tetg);
-TetFigure* turnTetFigure(Game* tetg);
-void calculateTet(Game* tetg);  // просчет одного такта
+TetFigure* create_figure(Game* tetg);
+int** create_print_field(int width, int height);
+void free_print_field(int** print_field, int height);
+void free_figure(TetFigure* tf);
+void drop_new_figure(Game* tetg);
+TetFigure* turn_figure(Game* tetg);
+void calculate(Game* tetg);  // просчет одного такта
 void save_score(int high_score);
 int load_score();
-void update_level(Game* tetg);
 
 #endif
